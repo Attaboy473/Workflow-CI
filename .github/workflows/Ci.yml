@@ -10,28 +10,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
-    - name: Install MLflow
-      run: |
-        pip install mlflow==2.9.2
-
     - name: Install Dependencies
       run: |
-        pip install pandas scikit-learn joblib matplotlib seaborn mlflow
+        pip install mlflow==2.9.2 pandas scikit-learn joblib matplotlib seaborn
 
     - name: Run MLflow Project
       run: |
+        # Menggunakan local environment agar tidak perlu pyenv/conda
+        # Pastikan train_preprocessed.csv ada di root atau di dalam folder MLProject
         mlflow run ./MLProject --env-manager=local
 
     - name: Build Docker Image
       run: |
-        mlflow models build-docker -m ./MLProject -n ${{ secrets.DOCKER_USERNAME }}/mlflow-workflow-ci
+        LAST_RUN_ID=$(mlflow last-run --quiet)
+        echo "Menggunakan Run ID: $LAST_RUN_ID"
+        
+        mlflow models build-docker \
+          -m "runs:/$LAST_RUN_ID/model" \
+          -n ${{ secrets.DOCKER_USERNAME }}/mlflow-workflow-ci \
+          --env-manager=local
 
     - name: Login to Docker Hub
       uses: docker/login-action@v3
