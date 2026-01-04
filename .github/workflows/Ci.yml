@@ -20,11 +20,15 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install "urllib3<2" "requests<3" docker
-        pip install mlflow==2.9.2 pandas scikit-learn joblib matplotlib seaborn
+        # 1. Install library utama
+        pip install mlflow==2.9.2 pandas scikit-learn joblib matplotlib seaborn docker
+        
+        # 2. Paksa downgrade urllib3 untuk memperbaiki error http+docker (PENTING)
+        pip install "urllib3<2.0.0" "requests<3.0.0"
 
     - name: Run MLflow Project
       run: |
+        # Menggunakan local environment agar tidak mencari pyenv
         mlflow run ./MLProject --env-manager=local
 
     - name: Build Docker Image
