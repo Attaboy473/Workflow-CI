@@ -20,12 +20,11 @@ jobs:
 
     - name: Install Dependencies
       run: |
+        pip install "urllib3<2" "requests<3" docker
         pip install mlflow==2.9.2 pandas scikit-learn joblib matplotlib seaborn
 
     - name: Run MLflow Project
       run: |
-        # Menggunakan local environment agar tidak perlu pyenv/conda
-        # Pastikan train_preprocessed.csv ada di root atau di dalam folder MLProject
         mlflow run ./MLProject --env-manager=local
 
     - name: Build Docker Image
