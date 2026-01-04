@@ -9,7 +9,7 @@ from sklearn.metrics import accuracy_score
 # Load dataset
 df = pd.read_csv("train_preprocessed.csv")
 
-TARGET_COL = "label"
+TARGET_COL = "price_range"
 
 X = df.drop(TARGET_COL, axis=1)
 y = df[TARGET_COL]
@@ -29,3 +29,4 @@ with mlflow.start_run():
     mlflow.sklearn.log_model(model, "model")
 
     print(f"Accuracy: {acc}")
+
