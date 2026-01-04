@@ -9,6 +9,10 @@ jobs:
   train-and-docker:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        shell: bash -l {0}   # 🔥 INI KUNCINYA
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
