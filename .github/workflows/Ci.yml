@@ -23,8 +23,9 @@ jobs:
         pip install mlflow
 
     - name: Run MLflow Project
-      run: |
-        mlflow run MLProject
+    run: |
+      mlflow run MLProject --env-manager=virtualenv
+
 
     - name: Build Docker Image with MLflow
       run: |
