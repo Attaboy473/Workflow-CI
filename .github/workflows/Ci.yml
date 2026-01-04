@@ -30,7 +30,7 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        LAST_RUN_ID=$(mlflow last-run --quiet)
+        LAST_RUN_ID=$(ls -t mlruns/0 | head -n 1)
         echo "Menggunakan Run ID: $LAST_RUN_ID"
         
         mlflow models build-docker \
