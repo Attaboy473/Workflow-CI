@@ -1,13 +1,23 @@
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-
+import os
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
+base_path = os.path.dirname(__file__)
+csv_path = os.path.join(base_path, "train_preprocessed.csv")
+
 # Load dataset
-df = pd.read_csv("train_preprocessed.csv")
+if os.path.exists(csv_path):
+    df = pd.read_csv(csv_path)
+else:
+    # Fallback jika file ada di root folder (satu tingkat di atas)
+    df = pd.read_csv(os.path.join(base_path, "..", "train_preprocessed.csv"))
+
+TARGET_COL = "price_range"
+# ... sisa kode Anda tetap sama ...
 
 TARGET_COL = "price_range"
 
@@ -29,4 +39,5 @@ with mlflow.start_run():
     mlflow.sklearn.log_model(model, "model")
 
     print(f"Accuracy: {acc}")
+
 
