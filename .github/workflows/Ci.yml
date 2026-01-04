@@ -10,8 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -22,11 +21,11 @@ jobs:
       run: |
         pip install mlflow==2.9.2
 
-    - name: Run MLflow Project (Training)
+    - name: Run MLflow Project
       run: |
         mlflow run ./MLProject --env-manager=virtualenv
 
-    - name: Build Docker Image with MLflow
+    - name: Build Docker Image
       run: |
         mlflow models build-docker -m ./MLProject -n ${{ secrets.DOCKER_USERNAME }}/mlflow-workflow-ci
 
