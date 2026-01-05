@@ -34,15 +34,28 @@ jobs:
 
         mlflow models generate-dockerfile -m "$MODEL_PATH" -d output_docker
 
-        sed -i 's/openjdk-8-jdk/default-jdk/g' output_docker/Dockerfile
-        sed -i 's/apt-get install -y/apt-get update && apt-get install -y/g' output_docker/Dockerfile
+        cat <<EOF > output_docker/Dockerfile.new
+        FROM ubuntu:20.04
+        ENV DEBIAN_FRONTEND=noninteractive
+        RUN apt-get update && apt-get install -y --no-install-recommends \
+            wget curl nginx ca-certificates bzip2 build-essential \
+            cmake default-jdk git-core maven \
+            && rm -rf /var/lib/apt/lists/*
+        
+        # Ambil sisa instruksi dari Dockerfile asli
+        EOF
+        
+        # Mengambil baris setelah instalasi paket dari Dockerfile asli
+        tail -n +10 output_docker/Dockerfile >> output_docker/Dockerfile.new
+        mv output_docker/Dockerfile.new output_docker/Dockerfile
 
+        # 4. Set Image Name & Build
         DOCKER_USER=${{ secrets.DOCKER_USERNAME }}
         IMAGE_NAME=${DOCKER_USER:-localuser}/mlflow-workflow-ci
         echo "FULL_IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
         docker build -t "$IMAGE_NAME" ./output_docker
-        
+
     - name: Login to Docker Hub
       if: env.FULL_IMAGE_NAME != 'localuser/mlflow-workflow-ci'
       uses: docker/login-action@v3
