@@ -20,31 +20,43 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install mlflow==2.9.2 pandas scikit-learn joblib matplotlib seaborn docker
-        pip install "urllib3<2.0.0" "requests<3.0.0"
-
+        pip install mlflow==2.9.2 pandas scikit-learn joblib matplotlib seaborn
     - name: Run MLflow Project
       run: |
-        # Kriteria Basic: Menjalankan training di folder MLProject
         mlflow run ./MLProject --env-manager=local
-
-    - name: Build Docker Image
+    - name: Build and Push Docker Image
       run: |
         MODEL_PATH=$(find MLProject/mlruns -name "MLmodel" -exec dirname {} \; | head -n 1)
-        echo "Model ditemukan di: $MODEL_PATH"
-
-        mlflow models build-docker \
-          -m "$MODEL_PATH" \
-          -n "${{ secrets.DOCKERHUB_USERNAME }}/mlflow-workflow-ci" \
-          --env-manager=local
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-    - name: Push Docker Image
-      run: |
-        # Kriteria Advance: Push image hasil build-docker ke Docker Hub
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/mlflow-workflow-ci
+        echo "Folder Model: $MODEL_PATH"
+        
+        cat <<EOF > Dockerfile
+        FROM python:3.9-slim
+        
+        WORKDIR /app
+        
+        # Instalasi dependensi sistem minimal
+        RUN apt-get update && apt-get install -y --no-install-recommends \
+            build-essential \
+            && rm -rf /var/lib/apt/lists/*
+            
+        RUN pip install --no-cache-dir mlflow==2.9.2 pandas scikit-learn joblib
+        
+        COPY $MODEL_PATH /app/model
+        
+        ENV MLFLOW_MODEL_PATH=/app/model
+        
+        EXPOSE 8080
+        
+        CMD ["mlflow", "models", "serve", "-m", "/app/model", "-h", "0.0.0.0", "-p", "8080", "--env-manager=local"]
+        EOF
+        # 3. Build Image
+        DOCKER_USER=${{ secrets.DOCKERHUB_USERNAME }}
+        IMAGE_NAME=${DOCKER_USER:-localuser}/mlflow-workflow-ci
+        docker build -t "$IMAGE_NAME" .
+        # 4. Push ke Docker Hub
+        if [ "${{ secrets.DOCKERHUB_USERNAME }}" != "" ]; then
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+          docker push "$IMAGE_NAME"
+        else
+          echo "DOCKERHUB_USERNAME tidak ditemukan, push dilewati."
+        fi
