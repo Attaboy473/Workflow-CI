@@ -30,8 +30,14 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        MODEL_PATH=$(find MLProject/mlruns -name "models" -exec dirname {} \;)
+        MODEL_PATH=$(find MLProject/mlruns -name "MLmodel" -exec dirname {} \; | head -n 1)
+        
         echo "Model ditemukan di: $MODEL_PATH"
+
+        if [ -z "$MODEL_PATH" ]; then
+          echo "Error: File MLmodel tidak ditemukan di folder mlruns!"
+          exit 1
+        fi
 
         mlflow models generate-dockerfile -m "$MODEL_PATH" -d output_docker
 
