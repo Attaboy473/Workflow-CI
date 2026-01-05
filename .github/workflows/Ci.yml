@@ -29,19 +29,19 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        RUN_ID=$(ls -t MLProject/mlruns/0 | grep -v "meta.yaml" | head -n 1)
+        RUN_ID=$(ls -F MLProject/mlruns/0 | grep / | grep -v "models/" | sed 's/\///' | head -n 1)
         echo "Run ID Ditemukan: $RUN_ID"
 
-        MODEL_SUBFOLDER=$(find MLProject/mlruns/0/$RUN_ID/models -name "m-*" -type d | head -n 1)
-        echo "Path Model: $MODEL_SUBFOLDER"
+        MODEL_PATH=$(find MLProject/mlruns/0/$RUN_ID -name "MLmodel" -exec dirname {} \;)
+        echo "Path Model: $MODEL_PATH"
 
-        if [ ! -f "$MODEL_SUBFOLDER/MLmodel" ]; then
-          echo "Error: File MLmodel tidak ditemukan di $MODEL_SUBFOLDER"
+        if [ -z "$MODEL_PATH" ]; then
+          echo "Error: Folder dengan file MLmodel tidak ditemukan!"
           exit 1
         fi
 
         mlflow models build-docker \
-          -m "$MODEL_SUBFOLDER" \
+          -m "$MODEL_PATH" \
           -n ${{ secrets.DOCKER_USERNAME }}/mlflow-workflow-ci \
           --env-manager=local
 
